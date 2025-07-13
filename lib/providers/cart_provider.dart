@@ -47,6 +47,19 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  void changeQuantity(String name, int change) {
+  if (_items.containsKey(name)) {
+    _items[name]!.quantity += change;
+
+    if (_items[name]!.quantity <= 0) {
+      _items.remove(name); // Remove if quantity drops to 0
+    }
+
+    notifyListeners();
+    saveCart();
+  }
+}
+
   Future<void> loadCart() async {
   final prefs = await SharedPreferences.getInstance();
   final cartData = prefs.getString('cart');

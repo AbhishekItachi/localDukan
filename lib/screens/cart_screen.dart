@@ -52,7 +52,7 @@ class CartScreen extends StatelessWidget {
                       SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () {
-                          // Handle checkout or payment
+                          Navigator.pushNamed(context, '/checkout');
                         },
                         child: Text("Checkout"),
                       )

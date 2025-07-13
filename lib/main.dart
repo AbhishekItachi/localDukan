@@ -6,6 +6,7 @@ import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
 import 'providers/cart_provider.dart';
 import 'providers/favorites_provider.dart';
+import 'screens/checkout_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,8 @@ class MyApp extends StatelessWidget {
           '/': (context) => LoginScreen(),
           '/home': (context) => HomeScreen(),
           '/cart': (context) => CartScreen(),
+          '/checkout': (context) => CheckoutScreen(),
+          '/confirmation': (context) => OrderConfirmationScreen(),
         },
       ),
     );

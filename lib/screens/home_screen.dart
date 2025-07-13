@@ -87,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cart = Provider.of<CartProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('GroceryGo'),
@@ -114,22 +115,46 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           buildCategoryChips(),
           Expanded(
-            child: _filteredItems.isNotEmpty
-                ? GridView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredItems.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, childAspectRatio: 0.75),
-                    itemBuilder: (context, index) {
-                      final item = _filteredItems[index];
-                      return GroceryItemCard(
-                        item: item,
-                        onAddToCart: () => _addToCart(item),
-                      );
-                    },
-                  )
-                : Center(child: Text("No groceries found.")),
+  child: Column(
+    children: [
+      if (cart.totalItemsCount > 0)
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          color: Colors.green.shade50,
+          width: double.infinity,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${cart.totalItemsCount} item(s) in cart',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '₹${cart.totalPrice}',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
+        ),
+      Expanded(
+        child: _filteredItems.isNotEmpty
+            ? GridView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _filteredItems.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                ),
+                itemBuilder: (context, index) {
+                  final item = _filteredItems[index];
+                  return GroceryItemCard(item: item);
+                },
+              )
+            : Center(child: Text("No groceries found.")),
+      ),
+    ],
+  ),
+),
         ],
       ),
     );
