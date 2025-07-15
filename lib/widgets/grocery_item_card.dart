@@ -7,7 +7,7 @@ import '../providers/favorites_provider.dart';
 class GroceryItemCard extends StatelessWidget {
   final GroceryItem item;
 
-  const GroceryItemCard({required this.item});
+  const GroceryItemCard({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {

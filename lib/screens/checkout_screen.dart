@@ -1,8 +1,8 @@
-// lib/screens/checkout_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/cart_provider.dart';
+import 'dart:convert';
 
 class CheckoutScreen extends StatefulWidget {
   @override
@@ -11,8 +11,17 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _addressController = TextEditingController();
-  List<String> _savedAddresses = [];
+  final _tagController = TextEditingController();
+  List<Map<String, String>> _savedAddresses = [];
   bool _isEditing = false;
+  String _selectedSlot = '9 AM - 11 AM';
+  final List<String> _deliverySlots = [
+    '9 AM - 11 AM',
+    '11 AM - 1 PM',
+    '1 PM - 3 PM',
+    '3 PM - 5 PM',
+    '5 PM - 7 PM',
+  ];
 
   @override
   void initState() {
@@ -22,50 +31,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _loadSavedAddresses() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _savedAddresses = prefs.getStringList('user_addresses') ?? [];
+    List<String>? stored = prefs.getStringList('user_addresses');
+    if (stored != null) {
+      _savedAddresses = stored
+          .map((e) => Map<String, String>.from(json.decode(e)))
+          .toList();
       if (_savedAddresses.isNotEmpty) {
-        _addressController.text = _savedAddresses.last;
+        _addressController.text = _savedAddresses.last['address']!;
+        _tagController.text = _savedAddresses.last['tag']!;
       }
-    });
+    }
+    setState(() {});
   }
 
-  void _saveAddress(String address) async {
+  void _saveAddress(String address, String tag) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!_savedAddresses.contains(address)) {
-      _savedAddresses.add(address);
-      await prefs.setStringList('user_addresses', _savedAddresses);
+    Map<String, String> entry = {'address': address, 'tag': tag};
+    if (!_savedAddresses.any((e) => e['address'] == address)) {
+      _savedAddresses.add(entry);
+      List<String> jsonEncoded =
+          _savedAddresses.map((e) => json.encode(e)).toList();
+      await prefs.setStringList('user_addresses', jsonEncoded);
     }
   }
 
   @override
   void dispose() {
     _addressController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
   void _placeOrder(CartProvider cart) {
-    if (_addressController.text.trim().isEmpty) {
+    if (_addressController.text.trim().isEmpty || _tagController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter delivery address')),
+        SnackBar(content: Text('Please enter address and tag')),
       );
       return;
     }
 
-    _saveAddress(_addressController.text.trim());
+    _saveAddress(_addressController.text.trim(), _tagController.text.trim());
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OrderConfirmationScreen(),
-      ),
-    );
+    Navigator.pushReplacementNamed(
+  context,
+  '/confirmation',
+  arguments: {'slot': _selectedSlot},
+);
     cart.clearCart();
   }
 
-  void _selectSavedAddress(String address) {
+  void _selectSavedAddress(Map<String, String> address) {
     setState(() {
-      _addressController.text = address;
+      _addressController.text = address['address']!;
+      _tagController.text = address['tag']!;
       _isEditing = false;
     });
   }
@@ -95,6 +113,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ),
                       SizedBox(height: 8),
+                      TextField(
+                        controller: _tagController,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Tag (e.g. Home, Work)',
+                        ),
+                      ),
+                      SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -113,7 +139,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             child: Text(
                               _addressController.text.isEmpty
                                   ? 'No address entered'
-                                  : _addressController.text,
+                                  : '${_addressController.text} (${_tagController.text})',
                               style: TextStyle(fontSize: 15),
                             ),
                           ),
@@ -131,8 +157,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             children: _savedAddresses.map((addr) => Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4),
                               child: ChoiceChip(
-                                label: Text(addr, overflow: TextOverflow.ellipsis),
-                                selected: _addressController.text == addr,
+                                label: Text('${addr['tag']}: ${addr['address']}', overflow: TextOverflow.ellipsis),
+                                selected: _addressController.text == addr['address'],
                                 onSelected: (_) => _selectSavedAddress(addr),
                               ),
                             )).toList(),
@@ -140,6 +166,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                     ],
                   ),
+            SizedBox(height: 20),
+            Text('Delivery Slot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Wrap(
+              spacing: 8.0,
+              children: _deliverySlots.map((slot) => ChoiceChip(
+                label: Text(slot),
+                selected: _selectedSlot == slot,
+                onSelected: (_) => setState(() => _selectedSlot = slot),
+              )).toList(),
+            ),
             SizedBox(height: 20),
             Text('Payment Method', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ListTile(
@@ -166,6 +202,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 }
 
 class OrderConfirmationScreen extends StatelessWidget {
+  final String slot;
+
+  OrderConfirmationScreen({required this.slot});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,6 +219,8 @@ class OrderConfirmationScreen extends StatelessWidget {
             Text('Your order has been placed successfully!',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            Text('Delivery Slot: $slot'),
             SizedBox(height: 30),
             ElevatedButton(
               onPressed: () => Navigator.popUntil(context, ModalRoute.withName('/home')),

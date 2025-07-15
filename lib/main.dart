@@ -27,6 +27,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -36,13 +38,35 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.green),
         initialRoute: '/home',
-        routes: {
-          '/': (context) => LoginScreen(),
-          '/home': (context) => HomeScreen(),
-          '/cart': (context) => CartScreen(),
-          '/checkout': (context) => CheckoutScreen(),
-          '/confirmation': (context) => OrderConfirmationScreen(),
-        },
+        onGenerateRoute: (settings) {
+    if (settings.name == '/confirmation') {
+      final args = settings.arguments as Map<String, dynamic>;
+      return MaterialPageRoute(
+        builder: (context) => OrderConfirmationScreen(slot: args['slot']),
+      );
+    }
+    // Default routing
+    switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(builder: (_) => LoginScreen());
+      case '/home':
+        return MaterialPageRoute(builder: (_) => HomeScreen());
+      case '/checkout':
+        return MaterialPageRoute(builder: (_) => CheckoutScreen());
+      case '/cart':
+        return MaterialPageRoute(builder: (_) => CartScreen());
+      default:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(body: Center(child: Text('404 Not Found'))),
+        );
+    }
+  },
+        // routes: {
+        //   '/': (context) => LoginScreen(),
+        //   '/home': (context) => HomeScreen(),
+        //   '/cart': (context) => CartScreen(),
+        //   '/checkout': (context) => CheckoutScreen(),
+        // },
       ),
     );
   }

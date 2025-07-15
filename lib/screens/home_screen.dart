@@ -6,6 +6,8 @@ import '../widgets/grocery_item_card.dart';
 import '../providers/cart_provider.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
